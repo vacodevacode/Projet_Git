@@ -10,3 +10,9 @@
 
 - Python 3.x
 - VS Code, ou n’importe quel terminal avec Python
+
+
+## Commandes Git_From_Scratch
+
+- > Git log : python main.py log
+- > Git status : python main.py status

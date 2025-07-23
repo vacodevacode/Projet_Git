@@ -17,9 +17,48 @@ def main():
     elif command == "cat-file":
         from commands import git_cat_file
         git_cat_file.run(sys.argv[2:])
+        
+    elif command == "status":
+        from commands import status
+        status.run_status(sys.argv[2:])
+    elif command == "log":
+        from commands import log
+        log.run_log(sys.argv[2:])
     else:
         print(f"Unknown command: {command}")
         sys.exit(1)
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    # elif command == "merge":
+    #     from commands import merge
+    #     merge.run_merge(sys.argv[2:])
