@@ -121,7 +121,7 @@ def load_index(git_dir: Path) -> Dict[str, Dict[str, str]]:
 
         for _ in range(num_entries):
             # Lire la partie fixe de l'entrée (62 octets)
-            # ctime (8), mtime (8), dev (4), ino (4), mode (4), uid (4), gid (4), size (4), sha1 (20), flags (2)
+            # mode (4), sha1 (20)
             fixed_entry_data = content[offset : offset + 62]
             if len(fixed_entry_data) < 62:
                 print(f"DEBUG: Incomplete entry data at offset {offset}. Expected 62 bytes, got {len(fixed_entry_data)}")
