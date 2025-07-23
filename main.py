@@ -18,6 +18,9 @@ def main():
         from commands import git_cat_file
         git_cat_file.run(sys.argv[2:])
         
+    elif command == "merge":
+        from commands import merge
+        merge.run_merge(sys.argv[2:])
     elif command == "status":
         from commands import status
         status.run_status(sys.argv[2:])
@@ -59,6 +62,3 @@ if __name__ == "__main__":
 
 
     
-    # elif command == "merge":
-    #     from commands import merge
-    #     merge.run_merge(sys.argv[2:])
