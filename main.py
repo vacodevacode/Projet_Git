@@ -17,6 +17,36 @@ def main():
     elif command == "cat-file":
         from commands import git_cat_file
         git_cat_file.run(sys.argv[2:])
+    elif command == "add":
+        from commands import add
+        add.run(sys.argv[2:]) 
+    elif command == "commit":
+        from commands import commit
+        commit.run(sys.argv[2:])
+    elif command == "push":
+        from commands import push
+        push.run(sys.argv[2:])
+    elif command == "branch":
+        from commands import branch
+        branch.run(sys.argv[2:])
+    elif command == "checkout":
+        from commands import checkout 
+        checkout.run(sys.argv[2:]) 
+    elif command == "log":
+        from commands import log
+        log.run(sys.argv[2:]) 
+    elif command == "rm":
+        from commands import rm
+        rm.run(sys.argv[2:])
+    elif command == "merge":
+        from commands import merge
+        merge.run(sys.argv[2:]) 
+    elif command == "status":
+        from commands import status
+        status.run(sys.argv[2:])  
+    elif command == "reset":
+        from commands import reset
+        reset.run(sys.argv[2:])               
     else:
         print(f"Unknown command: {command}")
         sys.exit(1)
