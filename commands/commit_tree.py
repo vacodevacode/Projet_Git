@@ -37,8 +37,8 @@ def run(argv):
         print(f"fatal: {e}", file=sys.stderr)
         sys.exit(1)
 
+#Créer un objet commit
 def create_commit_object(tree_sha, message, parent_sha=None):
-    """Crée un objet commit (format Git standard)"""
     
     # Récupérer les informations de l'auteur
     author_name = os.environ.get('GIT_AUTHOR_NAME', 'Unknown')
