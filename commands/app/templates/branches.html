@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Branches</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-white text-gray-900 font-sans">
+  <div class="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center space-x-2">
+        <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.112.82-.26.82-.577v-2.024c-3.338.726-4.033-1.415-4.033-1.415-.546-1.387-1.333-1.756-1.333-1.756-1.09-.744.083-.729.083-.729 1.205.085 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.76-1.604-2.665-.3-5.467-1.334-5.467-5.932 0-1.31.468-2.382 1.236-3.222-.124-.303-.536-1.523.116-3.176 0 0 1.008-.322 3.3 1.23a11.5 11.5 0 0 1 3.003-.403 11.5 11.5 0 0 1 3.003.403c2.29-1.553 3.296-1.23 3.296-1.23.654 1.653.242 2.873.118 3.176.77.84 1.235 1.913 1.235 3.222 0 4.61-2.807 5.63-5.48 5.922.43.37.823 1.102.823 2.222v3.293c0 .32.218.694.825.576C20.565 21.796 24 17.297 24 12c0-6.63-5.37-12-12-12z" />
+      </svg>
+      <span class="text-xl font-semibold">My Github</span>
+    </div>
+    <a href="{{ url_for('depot') }}" class="text-sm text-blue-600 hover:underline">Retour au dépôt</a>
+  </div>
+
+  <main class="max-w-3xl mx-auto mt-8">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold">Branches</h1>
+      <a href="#" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm font-semibold">New branch</a>
+    </div>
+    <div class="bg-gray-50 border rounded shadow">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+            <th class="px-6 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {% for branch in branches %}
+          <tr>
+            <td class="px-6 py-4 whitespace-nowrap flex items-center">
+              {% if branch == "main" %}
+                <span class="bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded">main</span>
+              {% else %}
+                <span class="bg-gray-100 text-gray-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded">{{ branch }}</span>
+              {% endif %}
+              {% if branch == current_branch %}
+                <span class="ml-2 text-xs text-green-600 font-semibold">(courante)</span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+              {% if branch != current_branch %}
+                <a href="{{ url_for('depot', branch=branch) }}" class="text-blue-600 hover:underline">Voir</a>
+              {% else %}
+                <span class="text-gray-400">Active</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>
