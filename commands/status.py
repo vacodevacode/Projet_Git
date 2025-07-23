@@ -1,7 +1,3 @@
-"""
-Commande status indépendante.
-Peut fonctionner de manière autonome avec un minimum de dépendances.
-"""
 import sys
 import os
 # import json

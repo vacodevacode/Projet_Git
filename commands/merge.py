@@ -1,11 +1,4 @@
-"""
-Commande merge avec affichage amélioré et création de branches.
-"""
 import sys
-# import zlib
-# import hashlib
-# import time
-# import json
 from pathlib import Path
 from typing import Optional, List, Dict, Union
 

@@ -1,8 +1,3 @@
-"""
-Commande log indépendante avec gestion des arguments et encodage.
-Peut fonctionner de manière autonome avec un minimum de dépendances.
-"""
-
 import sys
 import zlib
 import hashlib
