@@ -80,7 +80,6 @@ def read_git_object(git_dir: Path, oid: str) -> dict:
     objects_dir = git_dir / "objects"
     obj_dir = objects_dir / oid[:2]
     obj_file = obj_dir / oid[2:]
-    print(f"Reading object {oid} from {obj_file}")
     if not obj_file.exists():
         raise FileNotFoundError(f"Object {oid} not found")
     
