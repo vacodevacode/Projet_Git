@@ -4,6 +4,7 @@ from datetime import datetime
 import hashlib
 import getpass
 import zlib
+import sys
 
 def get_current_branch():
     head_path = os.path.join(".mygit", "HEAD")
@@ -29,7 +30,7 @@ def hash_object(data, type_="blob", write=True):
 
 def build_tree(files):
     entries = []
-    for f in files:
+    for f in sorted(files):
         with open(f, "rb") as file_content:
             data = file_content.read()
             blob_hash = hash_object(data, "blob", write=True)
@@ -53,32 +54,47 @@ def build_commit(tree_hash, parent_hash, author, message, date):
     return commit_hash, commit_data
 
 def run(args):
+    # Vérifier que nous sommes dans un dépôt Git
+    if not os.path.exists(".mygit"):
+        print("fatal: not a git repository", file=sys.stderr)
+        sys.exit(1)
+    
     parser = argparse.ArgumentParser(prog="commit", description="Enregistre les modifications indexées")
     parser.add_argument('-m', '--message', required=True, help="Message du commit")
     parser.add_argument('--author', help="Auteur du commit (par défaut: utilisateur courant)")
-    opts = parser.parse_args(args)
+    
+    try:
+        opts = parser.parse_args(args)
+    except SystemExit as e:
+        sys.exit(e.code)
 
     index_file = os.path.join(".mygit", "index")
     if not os.path.exists(index_file):
-        print("Aucun fichier indexé à committer.")
-        return
-
+        print("Aucun fichier indexé à committer.", file=sys.stderr)
+        sys.exit(1)  
     with open(index_file, "r") as f:
         files = [line.strip() for line in f if line.strip()]
 
     if not files:
-        print("Aucun fichier indexé à committer.")
-        return
+        print("Aucun fichier indexé à committer.", file=sys.stderr)
+        sys.exit(1)  
 
     author = opts.author if opts.author else getpass.getuser()
     date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     # Récupérer le parent (dernier commit de la branche)
-    branch_ref = os.path.join(".mygit", "refs", "heads", get_current_branch())
+    branch_name = get_current_branch()
+    branch_ref = os.path.join(".mygit", "refs", "heads", branch_name)
+    
+    # Créer le répertoire refs/heads s'il n'existe pas
+    refs_heads_dir = os.path.dirname(branch_ref)
+    os.makedirs(refs_heads_dir, exist_ok=True)
+    
     parent_hash = None
     if os.path.exists(branch_ref):
         with open(branch_ref) as f:
-            parent_hash = f.read().strip() or None
+            content = f.read().strip()
+            parent_hash = content if content else None
 
     # Créer l'objet tree
     tree_hash, tree_entries = build_tree(files)
@@ -86,7 +102,7 @@ def run(args):
     # Créer l'objet commit
     commit_hash, commit_data = build_commit(tree_hash, parent_hash, author, opts.message, date)
 
-    # Écrit le hash du commit dans la branche courante
+    # Écrire le hash du commit dans la branche courante
     with open(branch_ref, "w") as f:
         f.write(commit_hash)
 
@@ -99,8 +115,10 @@ def run(args):
         f.write(f"Tree: {tree_hash}\n")
         f.write("Fichiers:\n")
         for entry in tree_entries:
-            # Format: blob <hash> <filename>
             f.write(f"  - {entry}\n")
         f.write("\n")
 
     print(f"Commit {commit_hash[:7]} effectué par {author} avec message : \"{opts.message}\" ({len(files)} fichier(s)).")
+
+if __name__ == "__main__":
+    run(sys.argv[1:])
