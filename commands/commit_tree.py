@@ -1,74 +1,136 @@
-import sys
-import hashlib
-import zlib
-import time
 import os
-from pathlib import Path
+import sys
+import argparse
+from datetime import datetime
+import hashlib
+import getpass
+import zlib
 
-def run(argv):
+def hash_object(data, type_="commit", write=True):
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+    
+    header = f"{type_} {len(data)}\0".encode()
+    full_data = header + data
+    sha1 = hashlib.sha1(full_data).hexdigest()
+    
+    if write:
+        obj_dir = os.path.join(".mygit", "objects", sha1[:2])
+        obj_path = os.path.join(obj_dir, sha1[2:])
+        os.makedirs(obj_dir, exist_ok=True)
+        
+        if not os.path.exists(obj_path):
+            with open(obj_path, "wb") as f:
+                f.write(zlib.compress(full_data))
+    
+    return sha1
+
+def object_exists(sha):
+    if len(sha) != 40:
+        return False
+    
+    obj_path = os.path.join(".mygit", "objects", sha[:2], sha[2:])
+    return os.path.exists(obj_path)
+
+def read_object(sha):
+    obj_path = os.path.join(".mygit", "objects", sha[:2], sha[2:])
+    
+    if not os.path.exists(obj_path):
+        return None, None
+    
     try:
-        if len(argv) < 3:
-            print("usage: git commit-tree <tree> -m <message> [-p <parent>]", file=sys.stderr)
-            sys.exit(1)
+        with open(obj_path, 'rb') as f:
+            compressed_data = f.read()
         
-        tree_sha = argv[0]
-        message = None
-        parent_sha = None
-        i = 1       
-        while i < len(argv):
-            if argv[i] == "-m" and i + 1 < len(argv):
-                message = argv[i + 1]
-                i += 2
-            elif argv[i] == "-p" and i + 1 < len(argv):
-                parent_sha = argv[i + 1]
-                i += 2
-            else:
-                i += 1
         
-        if not message:
-            print("fatal: message required", file=sys.stderr)
-            sys.exit(1)
+        try:
+            decompressed = zlib.decompress(compressed_data)
+        except:
+            decompressed = compressed_data
         
-        # Ici on va venir créer le commit 
-        commit_sha = create_commit_object(tree_sha, message, parent_sha)
-        print(commit_sha)
         
-    except Exception as e:
-        print(f"fatal: {e}", file=sys.stderr)
-        sys.exit(1)
+        null_pos = decompressed.find(b'\0')
+        if null_pos > 0:
+            header = decompressed[:null_pos].decode('utf-8')
+            content = decompressed[null_pos + 1:]
+            obj_type, size = header.split(' ')
+            return obj_type, content
+        
+        return None, None
+    except Exception:
+        return None, None
 
-#Créer un objet commit
-def create_commit_object(tree_sha, message, parent_sha=None):
+def build_commit_object(tree_sha, parent_sha, author, message, date):
+    lines = [f"tree {tree_sha}"]
     
-    # Récupérer les informations de l'auteur
-    author_name = os.environ.get('GIT_AUTHOR_NAME', 'Unknown')
-    author_email = os.environ.get('GIT_AUTHOR_EMAIL', 'unknown@example.com')
-    timestamp = int(time.time())
-    timezone = "+0000"
-    author_line = f"{author_name} <{author_email}> {timestamp} {timezone}"
-    
-    # Construire le contenu du commit 
-    commit_content = f"tree {tree_sha}\n"
     if parent_sha:
-        commit_content += f"parent {parent_sha}\n"
-    commit_content += f"author {author_line}\n"
-    commit_content += f"committer {author_line}\n"
-    commit_content += f"\n{message}\n"
+        lines.append(f"parent {parent_sha}")
     
-    obj_content = f"commit {len(commit_content)}\0{commit_content}"
-    sha = hashlib.sha1(obj_content.encode()).hexdigest()
+    lines.append(f"author {author} {date}")
+    lines.append(f"committer {author} {date}")
+    lines.append("")  
+    lines.append(message)
     
-    git_dir = Path(".mygit")
-    obj_dir = git_dir / "objects" / sha[:2]
-    obj_dir.mkdir(parents=True, exist_ok=True)
+    return "\n".join(lines)
+
+def run(args):
+    # Vérifier que nous sommes dans un dépôt Git
+    if not os.path.exists(".mygit"):
+        print("fatal: not a git repository", file=sys.stderr)
+        sys.exit(1)
     
-    # Compresser avec zlib 
-    obj_file = obj_dir / sha[2:]
-    if not obj_file.exists():
-        compressed = zlib.compress(obj_content.encode())
-        obj_file.write_bytes(compressed)
+    parser = argparse.ArgumentParser(
+        prog="commit-tree", 
+        description="Crée un nouvel objet commit"
+    )
+    parser.add_argument('tree', help="SHA de l'arbre à committer")
+    parser.add_argument('-p', '--parent', help="SHA du commit parent")
+    parser.add_argument('-m', '--message', required=True, help="Message du commit")
+    parser.add_argument('--author', help="Auteur du commit (par défaut: utilisateur courant)")
     
-    return sha
+    try:
+        opts = parser.parse_args(args)
+    except SystemExit as e:
+        sys.exit(e.code)
+    
+    tree_sha = opts.tree
+    parent_sha = opts.parent
+    message = opts.message
+    author = opts.author if opts.author else getpass.getuser()
+    date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Vérifier que l'arbre existe
+    if not object_exists(tree_sha):
+        print(f"fatal: not a valid object name {tree_sha}", file=sys.stderr)
+        sys.exit(1)
+    
+    # Vérifier que c'est bien un arbre
+    obj_type, _ = read_object(tree_sha)
+    if obj_type != "tree":
+        print(f"fatal: {tree_sha} is not a tree object", file=sys.stderr)
+        sys.exit(1)
+    
+    # Vérifier le parent
+    if parent_sha:
+        if not object_exists(parent_sha):
+            print(f"fatal: not a valid object name {parent_sha}", file=sys.stderr)
+            sys.exit(1)
+        
+        parent_type, _ = read_object(parent_sha)
+        if parent_type != "commit":
+            print(f"fatal: {parent_sha} is not a commit object", file=sys.stderr)
+            sys.exit(1)
+    
+    # Construire l'objet commit
+    commit_content = build_commit_object(tree_sha, parent_sha, author, message, date)
+    
+    # Créer l'objet commit
+    commit_sha = hash_object(commit_content, "commit", write=True)
+    
+    # Afficher le SHA du commit créé
+    print(commit_sha)
+    
+    return commit_sha
 
 if __name__ == "__main__":
     run(sys.argv[1:])
