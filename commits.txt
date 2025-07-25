@@ -1,13 +1,10 @@
-Commit: 02f256984e0481fd613b433a82215a8319e3ff35
-Date: 2025-07-23 09:25:04
+Commit: d1c7cb4748fadc6732014533cbaa6cd70fdae132
+Date: 2025-07-25 17:46:50
 Auteur: Lenovo
-Message: Premier Commit (test snapshot)
-Tree: 4ccc825fc77d3155a19d85747ea7d3f5d07bc0d3
+Message: Ajout de la structure du projet
+Tree: 5f2a49e3a5b3b7c9362dd712bfbd7cd0613ba6f9
 Fichiers:
-  - blob bdb2435dd199e94a25f7d0a09a0703aa16aa19dd app.py
-  - blob 440a3d026e122e8c84afeed1c0285dd1b615122d main.py
-  - blob 6b7274adf4deed4501637803b337e220688d0c7e readme.md
-  - blob 7411b8c16e3d343ce54491e9cdea32605cf6b879 test1.txt
-  - blob f35d3e67b4cdad5ef058bec4a2ef955a98c4848a test2.txt
-  - blob 8bc3c44fb7e64bf27e23c56a5a42b86b0e0bbecf test3.txt
+  - blob 6bc72339a17c723c7a5bbe95ab5570c5b3b6e49e README.md
+  - blob 2171672acafb1268f75b6881bd069069d087ca96 test.txt
+  - tree 8c9af016ff5bde622573091fe3462fed2506b83b Le
 

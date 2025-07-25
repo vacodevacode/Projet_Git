@@ -125,18 +125,33 @@
       <div>
         <h2 class="text-lg font-semibold mb-3">Fichiers du dépôt :</h2>
         <ul id="file-list" class="border rounded bg-white divide-y">
-          {% if files %}
+          {# Dossiers racine #}
+          {% set root_folders = [] %}
+          {% set root_files = [] %}
           {% for file in files %}
-          <li class="px-4 py-2 flex justify-between">
-            <span>{{ file }}</span>
-            <span class="text-gray-500 text-xs">
-              {{ file_commits.get(file, {}).get('message', "(pas de commit)") }}
-            </span>
-          </li>
+            {% if '/' in file %}
+              {% set folder = file.split('/')[0] %}
+              {% if folder not in root_folders %}
+                {% set _ = root_folders.append(folder) %}
+              {% endif %}
+            {% else %}
+              {% set _ = root_files.append(file) %}
+            {% endif %}
           {% endfor %}
-          {% else %}
-          <li class="px-4 py-2">(vide)</li>
-          {% endif %}
+          {% for folder in root_folders %}
+            <li>
+              <a href="{{ url_for('explorer', branch=current_branch, subpath=folder) }}">
+                📁 {{ folder }}
+              </a>
+            </li>
+          {% endfor %}
+          {% for file in root_files %}
+            <li>
+              <a href="{{ url_for('file_view', branch=current_branch, filepath=file) }}">
+                📝 {{ file }}
+              </a>
+            </li>
+          {% endfor %}
         </ul>
       </div>
 
