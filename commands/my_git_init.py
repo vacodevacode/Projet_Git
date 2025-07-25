@@ -20,6 +20,12 @@ def run(args):
             f.write("")
         print("C'est bon je crée la branche 'main' elle est initialisée")
 
+    main_remote_ref = os.path.join(refs_heads_dir, "main.remote")
+    if not os.path.exists(main_remote_ref):
+        with open(main_remote_ref, "w") as f:
+            f.write("")
+        print("C'est bon j'ai créé mon main.remote")        
+
     head_path = os.path.join(".mygit", "HEAD")
     with open(head_path, "w") as f:
         f.write("ref: refs/heads/main\n")
