@@ -1,4 +1,4 @@
-# mygithub
+# My Github
 
 - Ce projet a pour but de recréer les fonctionnalités principales de Git en Python. Nous avons donc recoder les commandes de Git.
 
@@ -14,13 +14,14 @@
 
 - Python 3.x
 - VS Code, ou n’importe quel terminal avec Python
+- pip install -r requirement.txt
 
-/!\ Dans l'interface Web , il y a eu un petit soucis pour la visualisation des fichiers contenue dans un dossier ( N'y prêtez pas attention )
-
+/!\ Dans l'interface Web , il y a eu un petit soucis pour la visualisation des fichiers contenue dans un dossier ( N'y prêtez pas attention je vous pris )
+Le test d'integration est effectué avec intégration.yml ( Voir Github Actions )
 
 ## 🚀 Commandes disponibles
 
-- **my_git_add** : Ajouter des fichiers/dossiers à l'index (ajouter un README.md )  
+- **my_git_add** : Ajouter des fichiers/dossiers à l'index (ajouter un README.md il se met au bon endroit )  
   ```bash
   python main.py my_git_add <fichier|dossier>
   ```
