@@ -28,11 +28,23 @@ def run(args):
     if opts.all:
         files = []
         for root, _, filenames in os.walk('.'):
+            if ".git" in root or ".mygit" in root:
+                continue
             for f in filenames:
-                if not f.startswith('.') and not f.endswith('.pyc') and ".mygit" not in root:
-                    files.append(os.path.relpath(os.path.join(root, f)))
+                full_path = os.path.join(root, f)
+                if (
+                    not f.startswith('.') and
+                    not f.endswith('.pyc') and
+                    "__pycache__" not in full_path
+                    and ".git" not in full_path
+                    and ".mygit" not in full_path
+                ):
+                    files.append(os.path.relpath(full_path))
     else:
-        files = list_files_recursively(opts.files)
+        files = [
+            f for f in list_files_recursively(opts.files)
+            if "__pycache__" not in f and ".git" not in f and ".mygit" not in f
+        ]
 
     if not files:
         print("Aucun fichier à ajouter.")
@@ -48,11 +60,12 @@ def run(args):
     new_files = [f for f in files if f not in index_files]
 
     for f in new_files:
+        norm_path = f.replace("\\", "/") 
         if opts.dry_run:
-            print(f"Ajouterais: {f}")
+            print(f"Ajouterais: {norm_path}")
         else:
             if opts.verbose:
-                print(f"{f} ajouté à l'index")
+                print(f"{norm_path} ajouté à l'index")
             try:
                 with open(f, "rb") as file_content:
                     data = file_content.read()
@@ -69,9 +82,18 @@ def run(args):
                 print(f"Erreur lors de la création du blob pour {f}: {e}")
 
     if not opts.dry_run and new_files:
-        with open(index_file, "a") as f:
+        with open(index_file, "a") as f_index:
             for file in new_files:
-                f.write(file + '\n')
+                f_index.write(norm_path + '\n')
 
     if not opts.verbose and not opts.dry_run:
         print(f"{len(new_files)} fichier(s) ajouté(s) à l'index.")
+
+    unique_files = set()
+    for f in files:
+        norm_path = f.replace("\\", "/")
+        unique_files.add(norm_path)
+
+    with open(index_file, "w") as f_index:
+        for file in sorted(unique_files):
+            f_index.write(file + "\n")
