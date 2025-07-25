@@ -4,7 +4,6 @@ from datetime import datetime
 import hashlib
 import getpass
 import zlib
-import sys
 
 def get_current_branch():
     head_path = os.path.join(".mygit", "HEAD")
@@ -29,14 +28,31 @@ def hash_object(data, type_="blob", write=True):
     return sha1
 
 def build_tree(files):
-    entries = []
-    for f in sorted(files):
-        with open(f, "rb") as file_content:
-            data = file_content.read()
-            blob_hash = hash_object(data, "blob", write=True)
-            entries.append(f"blob {blob_hash} {f}")
-    tree_data = "\n".join(entries).encode()
-    tree_hash = hash_object(tree_data, "tree", write=True)
+    def build_tree_recursive(file_list, base_path=""):
+        entries = []
+        folders = {}
+        for f in file_list:
+            parts = f.split("/", 1)
+            if len(parts) == 1:
+                file_path = f"{base_path}/{parts[0]}" if base_path else parts[0]
+                file_path = file_path.replace("\\", "/")
+                with open(file_path, "rb") as file_content:
+                    data = file_content.read()
+                    blob_hash = hash_object(data, "blob", write=True)
+                    entries.append(f"blob {blob_hash} {parts[0]}")
+            else:
+                folder, rest = parts
+                folders.setdefault(folder, []).append(rest)
+        for folder, subfiles in folders.items():
+            sub_base_path = f"{base_path}/{folder}" if base_path else folder
+            sub_base_path = sub_base_path.replace("\\", "/")
+            sub_tree_hash, _ = build_tree_recursive(subfiles, sub_base_path)
+            entries.append(f"tree {sub_tree_hash} {folder}")
+        tree_data = "\n".join(entries).encode()
+        tree_hash = hash_object(tree_data, "tree", write=True)
+        return tree_hash, entries
+
+    tree_hash, entries = build_tree_recursive(files)
     return tree_hash, entries
 
 def build_commit(tree_hash, parent_hash, author, message, date):
@@ -54,47 +70,32 @@ def build_commit(tree_hash, parent_hash, author, message, date):
     return commit_hash, commit_data
 
 def run(args):
-    # Vérifier que nous sommes dans un dépôt Git
-    if not os.path.exists(".mygit"):
-        print("fatal: not a git repository", file=sys.stderr)
-        sys.exit(1)
-    
     parser = argparse.ArgumentParser(prog="commit", description="Enregistre les modifications indexées")
     parser.add_argument('-m', '--message', required=True, help="Message du commit")
     parser.add_argument('--author', help="Auteur du commit (par défaut: utilisateur courant)")
-    
-    try:
-        opts = parser.parse_args(args)
-    except SystemExit as e:
-        sys.exit(e.code)
+    opts = parser.parse_args(args)
 
     index_file = os.path.join(".mygit", "index")
     if not os.path.exists(index_file):
-        print("Aucun fichier indexé à committer.", file=sys.stderr)
-        sys.exit(1)  
+        print("Aucun fichier indexé à committer.")
+        return
+
     with open(index_file, "r") as f:
         files = [line.strip() for line in f if line.strip()]
 
     if not files:
-        print("Aucun fichier indexé à committer.", file=sys.stderr)
-        sys.exit(1)  
+        print("Aucun fichier indexé à committer.")
+        return
 
     author = opts.author if opts.author else getpass.getuser()
     date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     # Récupérer le parent (dernier commit de la branche)
-    branch_name = get_current_branch()
-    branch_ref = os.path.join(".mygit", "refs", "heads", branch_name)
-    
-    # Créer le répertoire refs/heads s'il n'existe pas
-    refs_heads_dir = os.path.dirname(branch_ref)
-    os.makedirs(refs_heads_dir, exist_ok=True)
-    
+    branch_ref = os.path.join(".mygit", "refs", "heads", get_current_branch())
     parent_hash = None
     if os.path.exists(branch_ref):
         with open(branch_ref) as f:
-            content = f.read().strip()
-            parent_hash = content if content else None
+            parent_hash = f.read().strip() or None
 
     # Créer l'objet tree
     tree_hash, tree_entries = build_tree(files)
@@ -102,7 +103,7 @@ def run(args):
     # Créer l'objet commit
     commit_hash, commit_data = build_commit(tree_hash, parent_hash, author, opts.message, date)
 
-    # Écrire le hash du commit dans la branche courante
+    # Écrit le hash du commit dans la branche courante
     with open(branch_ref, "w") as f:
         f.write(commit_hash)
 
@@ -119,6 +120,3 @@ def run(args):
         f.write("\n")
 
     print(f"Commit {commit_hash[:7]} effectué par {author} avec message : \"{opts.message}\" ({len(files)} fichier(s)).")
-
-if __name__ == "__main__":
-    run(sys.argv[1:])
